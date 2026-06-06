@@ -91,13 +91,20 @@ export default function RaiseForm({
         </div>
         <div>
           <label className={labelCls}>Stage</label>
-          <input
+          <select
             className={inputCls}
             value={v.stage}
             onChange={(e) => set({ stage: e.target.value })}
-            placeholder="Pre-seed"
             required
-          />
+          >
+            <option value="" disabled>Select stage</option>
+            <option>Pre-seed</option>
+            <option>Seed</option>
+            <option>Series A</option>
+            <option>Series B</option>
+            <option>Series C</option>
+            <option>Growth / Late stage</option>
+          </select>
         </div>
         <div>
           <label className={labelCls}>Sector</label>
@@ -114,7 +121,6 @@ export default function RaiseForm({
             className={inputCls}
             value={v.round_size}
             onChange={(e) => set({ round_size: e.target.value })}
-            placeholder="£750k"
           />
         </div>
         <div>
@@ -123,7 +129,6 @@ export default function RaiseForm({
             className={inputCls}
             value={v.geography}
             onChange={(e) => set({ geography: e.target.value })}
-            placeholder="UK"
           />
         </div>
         <div>
