@@ -1,0 +1,30 @@
+# Render Blueprint — deploys RaiseScout as a persistent Node web service.
+# A real server (not serverless) means no per-request timeout, so the ~60-90s
+# research calls run fine on the free plan. Free instances spin down after ~15
+# min idle (one-time ~30-60s cold start on the next visit).
+#
+# Set the secret env vars in the Render dashboard (sync: false = not in git).
+services:
+  - type: web
+    name: raisescout
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    autoDeploy: true
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: APP_ACCESS_PASSWORD
+        sync: false
+      # Optional model overrides (defaults baked into code):
+      # - key: ANTHROPIC_RESEARCH_MODEL
+      #   value: claude-haiku-4-5
+      # - key: ANTHROPIC_SCORE_MODEL
+      #   value: claude-sonnet-4-6
