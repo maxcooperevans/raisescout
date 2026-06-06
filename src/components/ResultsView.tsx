@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import ResultsTable from "./ResultsTable";
+import { generateCsv, downloadCsv } from "@/lib/csv";
 import type { InvestorRecord } from "@/lib/types";
 
 // How many investors to research at once from the browser, and how often to
@@ -39,6 +40,7 @@ export default function ResultsView({
   const done = investors.filter((i) => isDone(i.research_status)).length;
   const errored = investors.filter((i) => i.research_status === "error").length;
   const allDone = total > 0 && done === total;
+  const hasScored = investors.some((i) => i.research_status === "complete");
 
   useEffect(() => {
     // Guard against React 18/19 StrictMode double-invoke in dev.
@@ -120,20 +122,39 @@ export default function ResultsView({
         <p className="mt-1 text-sm text-zinc-600">{raise.thesis}</p>
       </header>
 
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between gap-4">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
           Ranked shortlist · {total} investor{total === 1 ? "" : "s"}
         </h2>
-        {!allDone ? (
-          <span className="inline-flex items-center gap-2 text-sm text-blue-700">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
-            Researching… {done}/{total} done
-          </span>
-        ) : (
-          <span className="text-sm text-zinc-500">
-            Done{errored > 0 ? ` · ${errored} failed` : ""}
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {!allDone ? (
+            <span className="inline-flex items-center gap-2 text-sm text-blue-700">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
+              Researching… {done}/{total} done
+            </span>
+          ) : (
+            <span className="text-sm text-zinc-500">
+              Done{errored > 0 ? ` · ${errored} failed` : ""}
+            </span>
+          )}
+          {hasScored && (
+            <button
+              onClick={() => {
+                const slug = raise.company_name
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, "-")
+                  .replace(/^-|-$/g, "");
+                downloadCsv(
+                  generateCsv(investors),
+                  `raisescout-${slug}.csv`,
+                );
+              }}
+              className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm hover:border-zinc-400 hover:bg-zinc-50"
+            >
+              Export CSV
+            </button>
+          )}
+        </div>
       </div>
 
       <ResultsTable investors={investors} />
