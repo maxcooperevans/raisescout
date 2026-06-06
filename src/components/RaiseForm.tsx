@@ -3,11 +3,21 @@
 import { useState } from "react";
 import type { RaiseProfile } from "@/lib/types";
 
-export interface RaiseFormValues extends RaiseProfile {
+export type InvestorMode = "paste" | "scratch" | "seed";
+
+export interface FormSubmission {
+  raise: RaiseProfile; // competitors parsed from the field (may be empty)
+  mode: InvestorMode;
+  /** Pasted names (paste mode) or seed names (seed mode); empty for scratch. */
+  names: string[];
+  accessKey: string;
+}
+
+interface FormValues extends RaiseProfile {
   investorsText: string;
 }
 
-const SAMPLE: RaiseFormValues = {
+const SAMPLE: FormValues = {
   company_name: "Surveyr",
   stage: "Pre-seed",
   sector: "Proptech / B2B SaaS (property inspection software)",
@@ -15,43 +25,61 @@ const SAMPLE: RaiseFormValues = {
   geography: "UK",
   thesis:
     "AI-assisted property inspection software that turns a phone walkthrough into a structured surveyor-grade report.",
-  competitors: ["GoReport", "Inventory Hive", "InventoryBase"],
-  investorsText: "Seedcamp\nLocalGlobe\nForward Partners\nPi Labs\nSoftBank Vision Fund",
+  competitors: [],
+  investorsText: "Seedcamp\nLocalGlobe",
 };
 
 const inputCls =
   "w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500";
 const labelCls = "mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500";
 
+const MODES: { value: InvestorMode; label: string; hint: string }[] = [
+  { value: "paste", label: "Paste my own", hint: "I'll provide the investor names." },
+  {
+    value: "scratch",
+    label: "Suggest from scratch",
+    hint: "Discover investors from my raise profile.",
+  },
+  {
+    value: "seed",
+    label: "Seed + expand",
+    hint: "I'll give a few names; find more like them.",
+  },
+];
+
 export default function RaiseForm({
   onSubmit,
   loading,
 }: {
-  onSubmit: (
-    raise: RaiseProfile,
-    investors: string[],
-    accessKey: string,
-  ) => void;
+  onSubmit: (submission: FormSubmission) => void;
   loading: boolean;
 }) {
-  const [v, setV] = useState<RaiseFormValues>(SAMPLE);
+  const [v, setV] = useState<FormValues>(SAMPLE);
+  const [mode, setMode] = useState<InvestorMode>("scratch");
   const [accessKey, setAccessKey] = useState("");
-  const set = (patch: Partial<RaiseFormValues>) =>
+  const set = (patch: Partial<FormValues>) =>
     setV((prev) => ({ ...prev, ...patch }));
+
+  const competitorsProvided = v.competitors.length > 0;
+  // Discovery is needed unless the founder pasted their own list AND gave competitors.
+  const needsDiscovery = mode !== "paste" || !competitorsProvided;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const investors = v.investorsText
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const names =
+      mode === "scratch"
+        ? []
+        : v.investorsText
+            .split("\n")
+            .map((s) => s.trim())
+            .filter(Boolean);
     const { investorsText: _omit, ...raise } = v;
     void _omit;
-    onSubmit(raise, investors, accessKey);
+    onSubmit({ raise, mode, names, accessKey });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className={labelCls}>Company</label>
@@ -100,7 +128,7 @@ export default function RaiseForm({
           />
         </div>
         <div>
-          <label className={labelCls}>Known competitors (comma-separated)</label>
+          <label className={labelCls}>Known competitors (optional)</label>
           <input
             className={inputCls}
             value={v.competitors.join(", ")}
@@ -112,7 +140,7 @@ export default function RaiseForm({
                   .filter(Boolean),
               })
             }
-            placeholder="Competitor A, Competitor B"
+            placeholder="Leave blank to discover & confirm"
           />
         </div>
       </div>
@@ -127,14 +155,55 @@ export default function RaiseForm({
         />
       </div>
 
+      {/* Investor input mode */}
       <div>
-        <label className={labelCls}>Investors (one per line, max 15)</label>
-        <textarea
-          className={`${inputCls} h-32 resize-none font-mono`}
-          value={v.investorsText}
-          onChange={(e) => set({ investorsText: e.target.value })}
-          required
-        />
+        <label className={labelCls}>Investors</label>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {MODES.map((m) => (
+            <button
+              type="button"
+              key={m.value}
+              onClick={() => setMode(m.value)}
+              className={`rounded-md border px-3 py-2 text-left text-sm transition ${
+                mode === m.value
+                  ? "border-zinc-900 bg-zinc-900 text-white"
+                  : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400"
+              }`}
+            >
+              <span className="block font-medium">{m.label}</span>
+              <span
+                className={`block text-xs ${mode === m.value ? "text-zinc-300" : "text-zinc-400"}`}
+              >
+                {m.hint}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {mode === "paste" && (
+          <textarea
+            className={`${inputCls} mt-2 h-28 resize-none font-mono`}
+            value={v.investorsText}
+            onChange={(e) => set({ investorsText: e.target.value })}
+            placeholder={"One investor per line (max 15)"}
+            required
+          />
+        )}
+        {mode === "seed" && (
+          <textarea
+            className={`${inputCls} mt-2 h-20 resize-none font-mono`}
+            value={v.investorsText}
+            onChange={(e) => set({ investorsText: e.target.value })}
+            placeholder={"2–3 investors you already like, one per line — we'll find more like them"}
+            required
+          />
+        )}
+        {mode === "scratch" && (
+          <p className="mt-2 text-sm text-zinc-500">
+            We&rsquo;ll propose real, web-sourced investors from your raise profile.
+            You review and deselect before anything is scored.
+          </p>
+        )}
       </div>
 
       <div>
@@ -148,8 +217,8 @@ export default function RaiseForm({
           autoComplete="off"
         />
         <p className="mt-1 text-xs text-zinc-400">
-          Running a search calls a live research agent (costs API credits), so new
-          runs are gated. Viewing existing results is open.
+          Discovery and scoring call live agents (cost API credits), so new runs are
+          gated. Viewing existing results is open.
         </p>
       </div>
 
@@ -158,7 +227,11 @@ export default function RaiseForm({
         disabled={loading}
         className="rounded-md bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-400"
       >
-        {loading ? "Researching…" : "Research & score investors"}
+        {loading
+          ? "Working…"
+          : needsDiscovery
+            ? "Find candidates →"
+            : "Research & score investors"}
       </button>
     </form>
   );

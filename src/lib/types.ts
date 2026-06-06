@@ -27,6 +27,22 @@ export interface CallUsage {
   web_search_requests: number;
 }
 
+// --- Discovery (web-grounded suggestions) ------------------------------------
+
+/**
+ * A suggested investor or competitor, discovered via web search. EVERY
+ * suggestion must carry a real public source_url — no source, no suggestion.
+ * Used by the discovery front-stage; the founder approves these before they
+ * enter the existing research/score pipeline (investors) or the conflict
+ * gate (competitors).
+ */
+export interface SourcedSuggestion {
+  name: string;
+  source_url: string;
+  /** One-line reason citing the specific found fact. */
+  reason: string;
+}
+
 // --- Enrichment (what the agent finds about an investor) ---------------------
 
 export interface Enrichment {
