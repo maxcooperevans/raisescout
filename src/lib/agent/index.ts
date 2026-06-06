@@ -2,7 +2,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { getAnthropic } from "../anthropic";
 import type { CallUsage, Enrichment, RaiseProfile, ScoreObject } from "../types";
 import { draftIntro, type DraftIntro } from "./draft";
-import { researchInvestor, type ResearchResult } from "./research";
+import { researchInvestorCached, type ResearchResult } from "./research";
 import { scoreInvestor } from "./score";
 
 export interface AssessmentUsage {
@@ -46,7 +46,11 @@ export async function assessInvestor(
   investorName: string,
   client: Anthropic = getAnthropic(),
 ): Promise<InvestorAssessment> {
-  const research = await researchInvestor(raise, investorName, client);
+  // Phase 1: firm-level research. Cache-aware: hits the DB cache first, only
+  // calls Anthropic on a miss or stale entry. The raise profile is NOT passed
+  // to research (making it raise-agnostic and safe to cache). The scorer in
+  // Phase 2 receives the full raise profile to judge fit and detect conflicts.
+  const research = await researchInvestorCached(investorName, client);
   const { enrichment, score, usage: scoreUsage } = await scoreInvestor(
     raise,
     investorName,
