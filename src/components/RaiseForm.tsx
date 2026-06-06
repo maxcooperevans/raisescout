@@ -18,15 +18,14 @@ interface FormValues extends RaiseProfile {
 }
 
 const SAMPLE: FormValues = {
-  company_name: "Surveyr",
-  stage: "Pre-seed",
-  sector: "Proptech / B2B SaaS (property inspection software)",
-  round_size: "£750k",
-  geography: "UK",
-  thesis:
-    "AI-assisted property inspection software that turns a phone walkthrough into a structured surveyor-grade report.",
+  company_name: "",
+  stage: "",
+  sector: "",
+  round_size: "",
+  geography: "",
+  thesis: "",
   competitors: [],
-  investorsText: "Seedcamp\nLocalGlobe",
+  investorsText: "",
 };
 
 const inputCls =

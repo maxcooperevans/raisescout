@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import ResultsTable from "./ResultsTable";
 import type { InvestorRecord } from "@/lib/types";
 
@@ -112,10 +111,7 @@ export default function ResultsView({
   return (
     <main className="mx-auto max-w-5xl px-4 py-10">
       <header className="mb-8">
-        <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800">
-          ← New search
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-zinc-900">
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
           {raise.company_name}
         </h1>
         <p className="mt-1 text-sm text-zinc-500">
